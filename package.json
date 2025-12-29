@@ -1,0 +1,28 @@
+{
+  "name": "connections",
+  "version": "1.0.0",
+  "description": "NYT Connections inspired game for kids",
+  "homepage": "https://github.com/goodsky/goodsky-dev-connections#readme",
+  "bugs": {
+    "url": "https://github.com/goodsky/goodsky-dev-connections/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/goodsky/goodsky-dev-connections.git"
+  },
+  "license": "MIT",
+  "author": "Skyler Goodell",
+  "scripts": {
+    "postinstall": "npm run install:client && npm run install:server",
+    "install:client": "cd client && npm install",
+    "install:server": "cd server && npm install",
+    "build": "cd client && npm run build",
+    "start": "cd server && node index.js",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
