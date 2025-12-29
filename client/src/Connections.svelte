@@ -19,6 +19,8 @@
     let solvedCategories = $state([]); // Categories that have been solved
     let retriesLeft = $state(4);
     let shakingWords = $state([]);    // Words currently shaking (wrong guess)
+    let celebratingWords = $state([]);  // Words celebrating (correct guess)
+    let celebrationColor = $state(null); // Color for celebrating words
     let isLoading = $state(true);
     
     // Game end states
@@ -81,28 +83,18 @@
             solvedCategories = [];
             retriesLeft = TOTAL_RETRIES;
             shakingWords = [];
+            celebratingWords = [];
+            celebrationColor = null;
             gameWon = false;
             gameLost = false;
             revealingCategories = false;
             revealedCount = 0;
-
-            // Update URL without reload
-            updateUrl();
         } catch (error) {
             console.error('Error loading game:', error);
         } finally {
             isLoading = false;
             initialLoadDone = true;
         }
-    }
-
-    function updateUrl() {
-        const params = new URLSearchParams();
-        if (gameId) params.set('game', gameId);
-        if (kidMode) params.set('kidmode', 'true');
-        
-        const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
-        window.history.replaceState({}, '', newUrl);
     }
 
     function toggleWordSelection(word) {
@@ -116,7 +108,6 @@
     }
 
     function shuffleWords() {
-        // Fisher-Yates shuffle
         const shuffled = [...words];
         for (let i = shuffled.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -140,15 +131,27 @@
         });
 
         if (matchedCategory) {
-            // Correct guess!
-            solvedCategories = [...solvedCategories, matchedCategory];
-            words = words.filter(w => !selectedWords.includes(w));
+            // Correct guess! Start celebration animation
+            const wordsToRemove = [...selectedWords];
+            celebratingWords = wordsToRemove;
+            celebrationColor = DIFFICULTY_COLORS[matchedCategory.difficulty];
             selectedWords = [];
 
-            // Check for win
-            if (solvedCategories.length === 4) {
-                gameWon = true;
-            }
+            // After color fade, add to solved and remove from grid
+            setTimeout(() => {
+                // Clear celebrating state first
+                celebratingWords = [];
+                celebrationColor = null;
+                
+                // Then add category and remove words
+                solvedCategories = [...solvedCategories, matchedCategory];
+                words = words.filter(w => !wordsToRemove.includes(w));
+
+                // Check for win
+                if (solvedCategories.length === 4) {
+                    gameWon = true;
+                }
+            }, 600);
         } else {
             // Wrong guess - shake and decrement retries
             shakingWords = [...selectedWords];
@@ -254,9 +257,9 @@
         {:else}
             <p class="instructions">Create four groups of four!</p>
 
-            <!-- Solved Categories -->
             <!-- Game Grid - unified grid for solved categories and remaining tiles -->
             <div class="game-grid">
+                <!-- Solved Categories -->
                 {#each solvedCategories as category}
                     <div 
                         class="solved-category"
@@ -273,8 +276,10 @@
                         class="word-tile"
                         class:selected={selectedWords.includes(word)}
                         class:shaking={shakingWords.includes(word)}
+                        class:celebrating={celebratingWords.includes(word)}
+                        style={celebratingWords.includes(word) && celebrationColor ? `background-color: ${celebrationColor.bg}; color: ${celebrationColor.text};` : ''}
                         onclick={() => toggleWordSelection(word)}
-                        disabled={gameWon || revealingCategories}
+                        disabled={gameWon || revealingCategories || celebratingWords.includes(word)}
                     >
                         {word}
                     </button>
@@ -461,7 +466,7 @@
 
     /* Word Tiles */
     .word-tile {
-        aspect-ratio: 1.2;
+        aspect-ratio: 1;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -497,15 +502,21 @@
         cursor: default;
     }
 
+    /* Celebrating animation for correct guesses */
+    .word-tile.celebrating {
+        transition: background-color 0.5s ease-out, color 0.5s ease-out, transform 0.3s ease-out;
+        transform: scale(1.05);
+    }
+
     /* Shake animation for wrong guesses */
     .word-tile.shaking {
-        animation: shake 0.5s ease-in-out;
+        animation: shake 0.8s ease-in-out;
     }
 
     @keyframes shake {
         0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-        20%, 40%, 60%, 80% { transform: translateX(5px); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+        20%, 40%, 60%, 80% { transform: translateX(4px); }
     }
 
     /* Retries */
@@ -535,7 +546,7 @@
     }
 
     .retry-dot.used {
-        background-color: #3a3a3c;
+        visibility: hidden;
     }
 
     /* Control Buttons */
@@ -548,7 +559,7 @@
     .control-btn {
         padding: 0.75rem 1.5rem;
         border-radius: 24px;
-        border: 1px solid #5a5a5c;
+        border: 2px solid #ffffff;
         background-color: transparent;
         color: #ffffff;
         font-size: 0.875rem;
