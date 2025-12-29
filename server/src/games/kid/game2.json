@@ -1,0 +1,26 @@
+{
+  "id": "kid-game2",
+  "kidMode": true,
+  "categories": [
+    {
+      "name": "FRUITS",
+      "difficulty": 0,
+      "words": ["APPLE", "BANANA", "ORANGE", "GRAPE"]
+    },
+    {
+      "name": "BODY PARTS",
+      "difficulty": 1,
+      "words": ["NOSE", "EAR", "HAND", "FOOT"]
+    },
+    {
+      "name": "WEATHER",
+      "difficulty": 2,
+      "words": ["SUN", "RAIN", "SNOW", "CLOUD"]
+    },
+    {
+      "name": "NUMBERS",
+      "difficulty": 3,
+      "words": ["ONE", "TWO", "THREE", "FOUR"]
+    }
+  ]
+}

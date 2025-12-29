@@ -1,0 +1,26 @@
+{
+  "id": "kid-game1",
+  "kidMode": true,
+  "categories": [
+    {
+      "name": "SHAPES",
+      "difficulty": 0,
+      "words": ["CIRCLE", "SQUARE", "TRIANGLE", "STAR"]
+    },
+    {
+      "name": "ANIMALS",
+      "difficulty": 1,
+      "words": ["DOG", "CAT", "BIRD", "FISH"]
+    },
+    {
+      "name": "COLORS",
+      "difficulty": 2,
+      "words": ["RED", "BLUE", "GREEN", "YELLOW"]
+    },
+    {
+      "name": "VEHICLES",
+      "difficulty": 3,
+      "words": ["CAR", "TRUCK", "BUS", "TRAIN"]
+    }
+  ]
+}

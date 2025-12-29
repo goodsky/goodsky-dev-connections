@@ -5,15 +5,15 @@
     let isValidPath = true;
   
     onMount(() => {
-        // We only support the root path
-        isValidPath = window.location.pathname === '/';
+        // We only support the root path (query params are OK)
+        isValidPath = window.location.pathname === '/' || window.location.pathname === '';
     });
 </script>
 
 {#if isValidPath}
     <Connections />
 {:else}
-    <div style="text-align: center; padding: 2rem;">
+    <div style="text-align: center; padding: 2rem; background-color: #121213; color: #ffffff; min-height: 100vh;">
         <h1>404</h1>
         <p>Page not found</p>
     </div>
