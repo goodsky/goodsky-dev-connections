@@ -13,11 +13,11 @@
   "license": "MIT",
   "author": "Skyler Goodell",
   "scripts": {
-    "postinstall": "npm run install:client && npm run install:server",
     "install:client": "cd client && npm install",
     "install:server": "cd server && npm install",
+    "postinstall": "npm run install:client && npm run install:server",
     "build": "cd client && npm run build",
-    "start": "cd server && node index.js",
+    "start": "cd server && npm start",
     "dev:client": "cd client && npm run dev",
     "dev:server": "cd server && npm run dev",
     "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\""

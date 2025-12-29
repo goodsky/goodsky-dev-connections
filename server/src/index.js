@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 
 const PUBLIC_DIR = path.join(__dirname, '../public');
 const INDEX = path.join(PUBLIC_DIR, 'index.html');
