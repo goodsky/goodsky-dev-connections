@@ -33,19 +33,14 @@
 
 <nav class="menu-bar">
     <div class="left-section">
-        <label class="kid-mode-toggle">
-            <input 
-                type="checkbox" 
-                checked={kidMode}
-                onchange={handleKidModeToggle}
-            />
-            <span class="toggle-slider"></span>
-            <span class="toggle-label">Kid Mode</span>
-        </label>
-    </div>
-    
-    <div class="center-section">
-        <h1 class="title">Connections</h1>
+        <button 
+            class="kid-mode-button" 
+            class:active={kidMode}
+            onclick={handleKidModeToggle}
+        >
+            Kid Mode
+            <span class="status-box">{kidMode ? 'ON' : 'OFF'}</span>
+        </button>
     </div>
     
     <div class="right-section">
@@ -96,65 +91,52 @@
         justify-content: flex-end;
     }
 
-    .center-section {
-        flex: 0 0 auto;
-    }
-
-    .title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin: 0;
-        color: #ffffff;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-    }
-
-    /* Kid Mode Toggle Switch */
-    .kid-mode-toggle {
+    /* Kid Mode Button */
+    .kid-mode-button {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        cursor: pointer;
-        user-select: none;
-    }
-
-    .kid-mode-toggle input {
-        display: none;
-    }
-
-    .toggle-slider {
-        position: relative;
-        width: 44px;
-        height: 24px;
-        background-color: #3a3a3c;
-        border-radius: 12px;
-        transition: background-color 0.2s;
-    }
-
-    .toggle-slider::after {
-        content: '';
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 20px;
-        height: 20px;
-        background-color: #ffffff;
-        border-radius: 50%;
-        transition: transform 0.2s;
-    }
-
-    .kid-mode-toggle input:checked + .toggle-slider {
-        background-color: #538d4e;
-    }
-
-    .kid-mode-toggle input:checked + .toggle-slider::after {
-        transform: translateX(20px);
-    }
-
-    .toggle-label {
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background-color: transparent;
+        border: 1px solid #3a3a3c;
+        border-radius: 8px;
         color: #818384;
         font-size: 0.875rem;
         font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .kid-mode-button:hover {
+        border-color: #5a5a5c;
+        color: #ffffff;
+    }
+
+    .kid-mode-button.active {
+        background-color: #ba81c5;
+        border-color: #ba81c5;
+        color: #000000;
+    }
+
+    .kid-mode-button.active:hover {
+        background-color: #c99ad3;
+        border-color: #c99ad3;
+    }
+
+    .status-box {
+        padding: 0.125rem 0.375rem;
+        background-color: #3a3a3c;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        transition: background-color 0.2s;
+        min-width: 1.75rem;
+        text-align: center;
+    }
+
+    .kid-mode-button.active .status-box {
+        background-color: rgba(0, 0, 0, 0.2);
+        color: #000000;
     }
 
     /* Menu Button and Dropdown */

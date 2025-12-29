@@ -255,7 +255,8 @@
             <p class="instructions">Create four groups of four!</p>
 
             <!-- Solved Categories -->
-            <div class="grid-container">
+            <!-- Game Grid - unified grid for solved categories and remaining tiles -->
+            <div class="game-grid">
                 {#each solvedCategories as category}
                     <div 
                         class="solved-category"
@@ -266,22 +267,18 @@
                     </div>
                 {/each}
 
-                <!-- Remaining Word Grid -->
-                {#if words.length > 0}
-                    <div class="words-grid" style="--rows: {Math.ceil(words.length / 4)}">
-                        {#each words as word}
-                            <button
-                                class="word-tile"
-                                class:selected={selectedWords.includes(word)}
-                                class:shaking={shakingWords.includes(word)}
-                                onclick={() => toggleWordSelection(word)}
-                                disabled={gameWon || revealingCategories}
-                            >
-                                {word}
-                            </button>
-                        {/each}
-                    </div>
-                {/if}
+                <!-- Remaining Word Tiles -->
+                {#each words as word}
+                    <button
+                        class="word-tile"
+                        class:selected={selectedWords.includes(word)}
+                        class:shaking={shakingWords.includes(word)}
+                        onclick={() => toggleWordSelection(word)}
+                        disabled={gameWon || revealingCategories}
+                    >
+                        {word}
+                    </button>
+                {/each}
             </div>
 
             <!-- Retry Indicators (hidden in kid mode) -->
@@ -428,20 +425,26 @@
         margin-bottom: 1.5rem;
     }
 
-    .grid-container {
+    /* Unified Game Grid */
+    .game-grid {
         width: 100%;
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
         gap: 0.5rem;
     }
 
-    /* Solved Category Row */
+    /* Solved Category Row - spans all 4 columns */
     .solved-category {
-        width: 100%;
-        padding: 1rem;
+        grid-column: 1 / -1;
+        aspect-ratio: 4.8 / 1;
+        padding: 0.5rem 1rem;
         border-radius: 8px;
         text-align: center;
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
 
     .category-name {
@@ -456,23 +459,16 @@
         text-transform: uppercase;
     }
 
-    /* Word Grid */
-    .words-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 0.5rem;
-        width: 100%;
-    }
-
+    /* Word Tiles */
     .word-tile {
         aspect-ratio: 1.2;
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: #5a5a5c;
+        background-color: #d6d6ca;
         border: none;
         border-radius: 8px;
-        color: #ffffff;
+        color: #000000;
         font-size: 0.875rem;
         font-weight: 600;
         text-transform: uppercase;
@@ -484,13 +480,17 @@
     }
 
     .word-tile:hover:not(:disabled) {
-        background-color: #6a6a6c;
+        background-color: #c9c3ba;
     }
 
     .word-tile.selected {
-        background-color: #5a5a5c;
-        border: 3px solid #ffffff;
+        background-color: #3a3a3c;
+        color: #ffffff;
         transform: scale(0.98);
+    }
+
+    .word-tile.selected:hover:not(:disabled) {
+        background-color: #4a4a4c;
     }
 
     .word-tile:disabled {
