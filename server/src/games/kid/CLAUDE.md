@@ -5,7 +5,7 @@ Generate EASY and FUN word games for PRESCHOOL CHILDREN. Create 4 non-overlappin
 # File Format
 {
   "id": "$UniqueId",
-  "kidMode": false,
+  "kidMode": true,
   "categories": [
     {
       "name": "$CategoryName",
@@ -42,4 +42,4 @@ Generate EASY and FUN word games for PRESCHOOL CHILDREN. Create 4 non-overlappin
  * The file name should include the game id, for example if id=123 then the file will be `game-123.json`.
  * The file MUST contain EXACTLY 4 categories.
  * Categories MUST contain AT LEAST 4 words. If more than 4 words are supplied then 4 random words will be used. This can be desirable, because it increases the replayability of the game!
- * Be creative! Have fun! 😁
+ * The categories must be VERY SIMPLE 😁

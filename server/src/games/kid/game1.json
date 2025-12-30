@@ -15,7 +15,12 @@
     {
       "name": "COLORS",
       "difficulty": 2,
-      "words": ["RED", "BLUE", "GREEN", "YELLOW"]
+      "words": [
+        {"text": "RED", "lightColor": "#CC0000", "darkColor": "#FF4444"},
+        {"text": "BLUE", "lightColor": "#0000CC", "darkColor": "#4444FF"},
+        {"text": "GREEN", "lightColor": "#008800", "darkColor": "#44DD44"},
+        {"text": "YELLOW", "lightColor": "#AA8800", "darkColor": "#FFD700"}
+      ]
     },
     {
       "name": "VEHICLES",

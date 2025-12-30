@@ -119,10 +119,37 @@
     function toggleWordSelection(word) {
         if (gameWon || gameLost || revealingCategories) return;
         
-        if (selectedWords.includes(word)) {
-            selectedWords = selectedWords.filter(w => w !== word);
+        const isSelected = selectedWords.some(w => w.text === word.text);
+        if (isSelected) {
+            selectedWords = selectedWords.filter(w => w.text !== word.text);
         } else if (selectedWords.length < MAX_SELECTION) {
             selectedWords = [...selectedWords, word];
+            
+            // In kid mode, speak the word aloud when selected
+            if (kidMode) {
+                speakWord(word.text);
+            }
+        }
+    }
+
+    function speakWord(word) {
+        if ('speechSynthesis' in window) {
+            // Cancel any currently speaking text
+            window.speechSynthesis.cancel();
+            
+            // Remove emojis from the spoken text since speech synthesis handles them inconsistently
+            // Emojis are in the Unicode range for supplementary characters
+            const textToSpeak = word.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+            
+            // Only speak if there's text remaining after removing emojis
+            if (textToSpeak) {
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.rate = 0.75;  // Slightly slower for kids
+                utterance.pitch = 1.5; // Slightly higher pitch
+                utterance.volume = 1.0;
+                
+                window.speechSynthesis.speak(utterance);
+            }
         }
     }
 
@@ -136,15 +163,16 @@
     }
 
     function swapSolvedCategoryWords(category) {
+        const categoryWordTexts = category.words.map(w => w.text);
         const categoryWordIndices = words
-            .map((w, index) => category.words.includes(w) ? index : -1)
+            .map((w, index) => categoryWordTexts.includes(w.text) ? index : -1)
             .filter((w) => w !== -1);
 
-        console.log('Swapping solved category words:', category.words, 'at indices:', categoryWordIndices);
+        console.log('Swapping solved category words:', categoryWordTexts, 'at indices:', categoryWordIndices);
 
         // Swap the solved category words into the front of the words array
         for (const categoryWordIndex of categoryWordIndices) {
-            const firstNonCategoryIndex = words.findIndex((w, index) => !category.words.includes(w) && index < 4);
+            const firstNonCategoryIndex = words.findIndex((w, index) => !categoryWordTexts.includes(w.text) && index < 4);
             const temp = words[firstNonCategoryIndex];
             words[firstNonCategoryIndex] = words[categoryWordIndex];
             words[categoryWordIndex] = temp;
@@ -163,8 +191,10 @@
         // Check if selected words match any category
         const matchedCategory = categories.find(cat => {
             const catWords = cat.words;
-            return selectedWords.every(w => catWords.includes(w)) &&
-                   catWords.every(w => selectedWords.includes(w));
+            const selectedTexts = selectedWords.map(w => w.text);
+            const catTexts = catWords.map(w => w.text);
+            return selectedTexts.every(t => catTexts.includes(t)) &&
+                   catTexts.every(t => selectedTexts.includes(t));
         });
 
         if (matchedCategory) {
@@ -173,6 +203,11 @@
             celebratingWords = wordsToRemove;
             celebrationColor = DIFFICULTY_COLORS[matchedCategory.difficulty];
             selectedWords = [];
+
+            // In kid mode, announce the category name
+            if (kidMode) {
+                speakWord(matchedCategory.name);
+            }
 
             // After color fade, add to solved and remove from grid
             setTimeout(() => {
@@ -194,8 +229,9 @@
         } else {
             // Wrong guess - check if one away
             const isOneAway = categories.some(cat => {
-                const catWords = cat.words;
-                const matchCount = selectedWords.filter(w => catWords.includes(w)).length;
+                const catTexts = cat.words.map(w => w.text);
+                const selectedTexts = selectedWords.map(w => w.text);
+                const matchCount = selectedTexts.filter(t => catTexts.includes(t)).length;
                 return matchCount === 3;
             });
 
@@ -249,7 +285,8 @@
             if (revealIndex < unsolvedCategories.length) {
                 const catToReveal = unsolvedCategories[revealIndex];
                 solvedCategories = [...solvedCategories, catToReveal];
-                words = words.filter(w => !catToReveal.words.includes(w));
+                const catWordTexts = catToReveal.words.map(w => w.text);
+                words = words.filter(w => !catWordTexts.includes(w.text));
                 revealedCount++;
                 revealIndex++;
             } else {
@@ -271,8 +308,8 @@
         
         // Include all words from the current game (both solved and unsolved)
         const allGameWords = [
-            ...solvedCategories.flatMap(cat => cat.words),
-            ...words
+            ...solvedCategories.flatMap(cat => cat.words.map(w => w.text)),
+            ...words.map(w => w.text)
         ];
         if (allGameWords.length > 0) {
             params.set('words', allGameWords.join(','));
@@ -362,22 +399,25 @@
                         style="background-color: {DIFFICULTY_COLORS[category.difficulty].bg}; color: {DIFFICULTY_COLORS[category.difficulty].text};"
                     >
                         <div class="category-name">{category.name}</div>
-                        <div class="category-words">{category.words.join(', ')}</div>
+                        <div class="category-words">{category.words.map(w => w.text).join(', ')}</div>
                     </div>
                 {/each}
 
                 <!-- Remaining Word Tiles -->
                 {#each words as word}
+                    {@const isSelected = selectedWords.some(w => w.text === word.text)}
+                    {@const isCelebrating = celebratingWords.some(w => w.text === word.text)}
+                    {@const wordColor = isCelebrating ? '' : (isSelected && word.lightColor ? word.lightColor : word.darkColor)}
                     <button
                         class="word-tile"
-                        class:selected={selectedWords.includes(word)}
-                        class:shaking={shakingWords.includes(word)}
-                        class:celebrating={celebratingWords.includes(word)}
-                        style="{celebratingWords.includes(word) && celebrationColor ? `background-color: ${celebrationColor.bg}; color: ${celebrationColor.text};` : ''} font-size: {getFontSize(word)};"
+                        class:selected={isSelected}
+                        class:shaking={shakingWords.some(w => w.text === word.text)}
+                        class:celebrating={isCelebrating}
+                        style="{isCelebrating && celebrationColor ? `background-color: ${celebrationColor.bg}; color: ${celebrationColor.text};` : ''}{wordColor ? ` color: ${wordColor};` : ''} font-size: {getFontSize(word.text)};"
                         onclick={() => toggleWordSelection(word)}
-                        disabled={gameWon || revealingCategories || celebratingWords.includes(word)}
+                        disabled={gameWon || revealingCategories || isCelebrating}
                     >
-                        {word}
+                        {word.text}
                     </button>
                 {/each}
             </div>

@@ -43,10 +43,12 @@ app.get('/api/newgame', (req, res) => {
     }
 
     // Return game data (shuffle words so categories aren't obvious)
+    // At this point, all words are normalized to {text, lightColor, darkColor} objects
     const allWords = game.categories.flatMap(cat => 
-        cat.words.map(word => ({ word, category: cat.name }))
+        cat.words.map(word => ({ ...word, category: cat.name }))
     );
 
+    // Fisher-Yates shuffle
     for (let i = allWords.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [allWords[i], allWords[j]] = [allWords[j], allWords[i]];
@@ -55,7 +57,7 @@ app.get('/api/newgame', (req, res) => {
     res.json({
         id: game.id,
         kidMode: game.kidMode,
-        words: allWords.map(w => w.word),
+        words: allWords.map(w => ({ text: w.text, lightColor: w.lightColor, darkColor: w.darkColor })),
         categories: game.categories.map(cat => ({
             name: cat.name,
             difficulty: cat.difficulty,

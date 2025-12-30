@@ -86,13 +86,41 @@ function getGameIds(kidMode) {
 }
 
 /**
+ * Normalize a word to object format
+ * @param {string|Object} word - Word as string or {text, lightColor, darkColor} object
+ * @returns {Object} Normalized word object with {text, lightColor, darkColor}
+ */
+function normalizeWord(word) {
+    if (typeof word === 'string') {
+        return { text: word, lightColor: null, darkColor: null };
+    }
+    const lightColor = word.lightColor || word.color || null;
+    const darkColor = word.darkColor || word.color || null;
+    
+    return { 
+        text: word.text, 
+        lightColor,
+        darkColor
+    };
+}
+
+/**
+ * Get the text from a word (handles both string and object formats)
+ * @param {string|Object} word - Word as string or {text, color} object
+ * @returns {string} The word text
+ */
+function getWordText(word) {
+    return typeof word === 'string' ? word : word.text;
+}
+
+/**
  * Randomly select 4 words from a category
- * @param {string[]} words - Array of words in a category
- * @returns {string[]} Array of 4 randomly selected words
+ * @param {(string|Object)[]} words - Array of words in a category (strings or objects)
+ * @returns {Object[]} Array of 4 randomly selected normalized word objects
  */
 function selectRandomWords(words) {
     if (words.length <= 4) {
-        return [...words];
+        return words.map(normalizeWord);
     }
     
     // Fisher-Yates shuffle and take first 4
@@ -102,14 +130,14 @@ function selectRandomWords(words) {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     
-    return shuffled.slice(0, 4);
+    return shuffled.slice(0, 4).map(normalizeWord);
 }
 
 /**
  * Select specific words from categories or randomly select if not specified
  * @param {Object} game - The game object
  * @param {string[]|null} requestedWords - Array of specific words to use (or null for random selection)
- * @returns {Object} Game object with selected words (4 per category)
+ * @returns {Object} Game object with selected words (4 per category), all words normalized to objects
  */
 function selectGameWords(game, requestedWords) {
     if (requestedWords && requestedWords.length > 0) {
@@ -118,17 +146,21 @@ function selectGameWords(game, requestedWords) {
         
         // Validate that all requested words exist in the game
         const allGameWords = game.categories.flatMap(cat => cat.words);
-        const allGameWordsUpper = new Set(allGameWords.map(w => w.toUpperCase()));
+        const allGameWordsUpperMap = new Map(
+            allGameWords.map(w => [getWordText(w).toUpperCase(), w])
+        );
         
         for (const word of requestedWords) {
-            if (!allGameWordsUpper.has(word.toUpperCase())) {
+            if (!allGameWordsUpperMap.has(word.toUpperCase())) {
                 throw new Error(`Word '${word}' not found in game`);
             }
         }
         
-        // Filter categories to only include requested words
+        // Filter categories to only include requested words and normalize
         const selectedCategories = game.categories.map(cat => {
-            const selectedWords = cat.words.filter(w => requestedSet.has(w.toUpperCase()));
+            const selectedWords = cat.words
+                .filter(w => requestedSet.has(getWordText(w).toUpperCase()))
+                .map(normalizeWord);
             return {
                 ...cat,
                 words: selectedWords
@@ -140,7 +172,7 @@ function selectGameWords(game, requestedWords) {
             categories: selectedCategories
         };
     } else {
-        // Randomly select 4 words from each category
+        // Randomly select 4 words from each category and normalize
         const selectedCategories = game.categories.map(cat => ({
             ...cat,
             words: selectRandomWords(cat.words)
@@ -159,5 +191,7 @@ module.exports = {
     getGameById,
     getRandomGame,
     getGameIds,
-    selectGameWords
+    selectGameWords,
+    normalizeWord,
+    getWordText
 };
