@@ -1,5 +1,5 @@
 <script>
-    let { kidMode = $bindable(false), onNewGame, onShareGame } = $props();
+    let { kidMode = $bindable(false), onNewGame, onShareGame, onHowToPlay } = $props();
     
     let menuOpen = $state(false);
 
@@ -15,6 +15,10 @@
     function handleShareGame() {
         menuOpen = false;
         onShareGame?.();
+    }
+
+    function openHowToPlay() {
+        onHowToPlay?.();
     }
 
     function handleKidModeToggle() {
@@ -45,6 +49,7 @@
     
     <div class="right-section">
         <div class="menu-container">
+            <button class="help-button" onclick={openHowToPlay} title="How to Play">ⓘ</button>
             <button class="menu-button" onclick={toggleMenu} aria-label="Open menu">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="1"></circle>
@@ -142,6 +147,28 @@
     /* Menu Button and Dropdown */
     .menu-container {
         position: relative;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .help-button {
+        background: none;
+        border: none;
+        color: #818384;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        transition: color 0.2s, background-color 0.2s;
+    }
+
+    .help-button:hover {
+        color: #ffffff;
+        background-color: #3a3a3c;
     }
 
     .menu-button {

@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import MenuBar from './MenuBar.svelte';
+    import SplashScreen from './SplashScreen.svelte';
 
     // Difficulty colors matching NYT (yellow, green, blue, purple)
     const DIFFICULTY_COLORS = [
@@ -22,6 +23,7 @@
     let celebratingWords = $state([]);  // Words celebrating (correct guess)
     let celebrationColor = $state(null); // Color for celebrating words
     let showOneAway = $state(false);     // Show "One away..." notification
+    let showSplash = $state(true);       // Show splash screen on first load
     let isLoading = $state(true);
     
     // Game end states
@@ -32,6 +34,7 @@
 
     // Share modal
     let showShareModal = $state(false);
+    let showHowToPlayModal = $state(false);
     let shareUrl = $state('');
     let copiedToClipboard = $state(false);
 
@@ -173,7 +176,7 @@
                         gameWon = true;
                     }, 1200);
                 }
-            }, 600);
+            }, 1000);
         } else {
             // Wrong guess - check if one away
             const isOneAway = categories.some(cat => {
@@ -257,6 +260,10 @@
         showShareModal = true;
     }
 
+    function handleHowToPlay() {
+        showHowToPlayModal = true;
+    }
+
     function copyShareUrl() {
         navigator.clipboard.writeText(shareUrl).then(() => {
             copiedToClipboard = true;
@@ -270,6 +277,10 @@
         showShareModal = false;
     }
 
+    function closeHowToPlayModal() {
+        showHowToPlayModal = false;
+    }
+
     function closeWinModal() {
         gameWon = false;
     }
@@ -277,6 +288,10 @@
     function closeLoseModal() {
         gameLost = false;
         revealingCategories = false;
+    }
+
+    function handlePlayClick() {
+        showSplash = false;
     }
 
     // Calculate font size based on word length and container size
@@ -291,10 +306,15 @@
 </script>
 
 <div class="game-container">
+    {#if showSplash}
+        <SplashScreen onPlay={handlePlayClick} />
+    {/if}
+
     <MenuBar 
         bind:kidMode={kidMode}
         onNewGame={handleNewGame} 
-        onShareGame={handleShareGame} 
+        onShareGame={handleShareGame}
+        onHowToPlay={handleHowToPlay}
     />
 
     <main class="game-content">
@@ -437,6 +457,40 @@
                 <div class="modal-buttons">
                     <button class="modal-btn" onclick={closeShareModal}>
                         Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    {/if}
+
+    <!-- How to Play Modal -->
+    {#if showHowToPlayModal}
+        <div class="modal-overlay" role="button" tabindex="0" onclick={closeHowToPlayModal} onkeydown={(e) => e.key === 'Enter' && closeHowToPlayModal()}>
+            <div class="modal how-to-play-modal" role="dialog" aria-modal="true" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+                <h2>How to Play</h2>
+                <div class="instructions-content">
+                    <p>Find groups of four items that share something in common.</p>
+                    <ul>
+                        <li>Select four items and tap 'Submit' to check if your guess is correct.</li>
+                        <li>Find all four groups without making 4 mistakes!</li>
+                        <li>Category difficulty increases as you play: 🟨 → 🟩 → 🟦 → 🟪</li>
+                        <li>Get 3 out of 4 correct? We'll let you know you're "One away..."</li>
+                    </ul>
+                    <h3>Kid Mode</h3>
+                    <p>Turn on <strong>Kid Mode</strong> for a family-friendly experience:</p>
+                    <ul>
+                        <li>Age-appropriate categories for young players</li>
+                        <li>Unlimited guesses - no mistakes counter</li>
+                    </ul>
+                    <h3>Credits</h3>
+                    <ul>
+                        <li>Developed by <a href="mailto:goodsky@outlook.com">Skyler Goodell</a></li>
+                        <li>Inspired by the New York Times' Connections game</li>
+                    </ul>
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn primary" onclick={closeHowToPlayModal}>
+                        Got it!
                     </button>
                 </div>
             </div>
@@ -673,10 +727,11 @@
         bottom: 0;
         background-color: rgba(0, 0, 0, 0.7);
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: center;
-        padding-top: 30vh;
+        padding: 1rem;
         z-index: 200;
+        overflow-y: auto;
     }
 
     .modal {
@@ -763,5 +818,57 @@
 
     .copy-btn:hover {
         background-color: #6aaa5f;
+    }
+
+    /* How to Play Modal */
+    .how-to-play-modal {
+        max-width: 500px;
+        text-align: left;
+    }
+
+    .how-to-play-modal h2 {
+        text-align: center;
+    }
+
+    .how-to-play-modal h3 {
+        color: #ffffff;
+        font-size: 1.125rem;
+        margin: 1.5rem 0 0.75rem 0;
+    }
+
+    .instructions-content {
+        color: #e0e0e0;
+    }
+
+    .instructions-content p {
+        color: #e0e0e0;
+        margin: 0 0 0.75rem 0;
+        line-height: 1.5;
+    }
+
+    .instructions-content ul {
+        margin: 0 0 1rem 0;
+        padding-left: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .instructions-content li {
+        margin-bottom: 0.5rem;
+        color: #e0e0e0;
+    }
+
+    .instructions-content a {
+        color: #ba81c5;
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.2s;
+    }
+
+    .instructions-content a:hover {
+        border-bottom-color: #ba81c5;
+    }
+
+    .instructions-content strong {
+        color: #ba81c5;
     }
 </style>
