@@ -13,7 +13,10 @@
 
     // Game state
     let kidMode = $state(false);
-    let gameId = $state(null);
+    let requestedGameId = $state(null); // Specific game ID requested via URL
+    let requestedWords = $state(null); // Specific words requested via URL
+
+    let gameId = $state(null);      // Current game ID
     let words = $state([]);           // Current words in grid (not yet solved)
     let categories = $state([]);      // All category definitions
     let selectedWords = $state([]);   // Currently selected words
@@ -52,24 +55,35 @@
         const params = new URLSearchParams(window.location.search);
         const urlKidMode = params.get('kidmode') === 'true';
         const urlGameId = params.get('game');
+        const urlWords = params.get('words');
         
         kidMode = urlKidMode;
-        gameId = urlGameId;
+        requestedGameId = urlGameId;
+        requestedWords = urlWords;
+        
+        // Clear URL parameters to prevent them from persisting on refresh
+        if (window.location.search) {
+            const cleanUrl = window.location.origin + window.location.pathname;
+            window.history.replaceState({}, '', cleanUrl);
+        }
     });
 
     // Watch for kid mode changes to load a new game
     $effect(() => {
-        loadGame(kidMode, gameId);
+        loadGame(kidMode, requestedGameId, requestedWords);
     });
 
-    async function loadGame(kidMode, specificGameId = null) {
-        console.log('Loading game with kidMode:', kidMode, 'gameId:', specificGameId);
+    async function loadGame(kidMode, specificGameId = null, specificWords = null) {
+        console.log('Loading game with kidMode:', kidMode, 'gameId:', specificGameId, 'words:', specificWords);
         isLoading = true;
         
         try {
             let url = `/api/newgame?kidmode=${kidMode}`;
             if (specificGameId) {
                 url += `&id=${specificGameId}`;
+            }
+            if (specificWords) {
+                url += `&words=${encodeURIComponent(specificWords)}`;
             }
             
             const response = await fetch(url);
@@ -254,6 +268,15 @@
         const params = new URLSearchParams();
         if (gameId) params.set('game', gameId);
         if (kidMode) params.set('kidmode', 'true');
+        
+        // Include all words from the current game (both solved and unsolved)
+        const allGameWords = [
+            ...solvedCategories.flatMap(cat => cat.words),
+            ...words
+        ];
+        if (allGameWords.length > 0) {
+            params.set('words', allGameWords.join(','));
+        }
         
         shareUrl = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
         copiedToClipboard = false;
