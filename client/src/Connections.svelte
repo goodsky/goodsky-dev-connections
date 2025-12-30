@@ -21,6 +21,7 @@
     let shakingWords = $state([]);    // Words currently shaking (wrong guess)
     let celebratingWords = $state([]);  // Words celebrating (correct guess)
     let celebrationColor = $state(null); // Color for celebrating words
+    let showOneAway = $state(false);     // Show "One away..." notification
     let isLoading = $state(true);
     
     // Game end states
@@ -77,7 +78,7 @@
             
             // Reset game state
             gameId = data.id;
-            words = [...data.words];
+            words = data.words;
             categories = data.categories;
             selectedWords = [];
             solvedCategories = [];
@@ -85,6 +86,7 @@
             shakingWords = [];
             celebratingWords = [];
             celebrationColor = null;
+            showOneAway = false;
             gameWon = false;
             gameLost = false;
             revealingCategories = false;
@@ -116,6 +118,24 @@
         words = shuffled;
     }
 
+    function swapSolvedCategoryWords(category) {
+        const categoryWordIndices = words
+            .map((w, index) => category.words.includes(w) ? index : -1)
+            .filter((w) => w !== -1);
+
+        console.log('Swapping solved category words:', category.words, 'at indices:', categoryWordIndices);
+
+        // Swap the solved category words into the front of the words array
+        for (const categoryWordIndex of categoryWordIndices) {
+            const firstNonCategoryIndex = words.findIndex((w, index) => !category.words.includes(w) && index < 4);
+            const temp = words[firstNonCategoryIndex];
+            words[firstNonCategoryIndex] = words[categoryWordIndex];
+            words[categoryWordIndex] = temp;
+        }
+
+        return words.slice(4);
+    }
+
     function deselectAll() {
         selectedWords = [];
     }
@@ -145,15 +165,31 @@
                 
                 // Then add category and remove words
                 solvedCategories = [...solvedCategories, matchedCategory];
-                words = words.filter(w => !wordsToRemove.includes(w));
+                words = swapSolvedCategoryWords(matchedCategory);
 
-                // Check for win
+                // Check for win with delay to let users admire the final board
                 if (solvedCategories.length === 4) {
-                    gameWon = true;
+                    setTimeout(() => {
+                        gameWon = true;
+                    }, 1200);
                 }
             }, 600);
         } else {
-            // Wrong guess - shake and decrement retries
+            // Wrong guess - check if one away
+            const isOneAway = categories.some(cat => {
+                const catWords = cat.words;
+                const matchCount = selectedWords.filter(w => catWords.includes(w)).length;
+                return matchCount === 3;
+            });
+
+            if (isOneAway) {
+                showOneAway = true;
+                setTimeout(() => {
+                    showOneAway = false;
+                }, 2000);
+            }
+
+            // Shake and decrement retries
             shakingWords = [...selectedWords];
             
             // Only decrement retries in non-kid mode
@@ -242,6 +278,16 @@
         gameLost = false;
         revealingCategories = false;
     }
+
+    // Calculate font size based on word length and container size
+    function getFontSize(word) {
+        const length = word.length;
+        // Use clamp() to scale with container while maintaining readable sizes
+        if (length <= 9) return 'clamp(0.75rem, 2.5vw, 1.0rem)';
+        if (length <= 13) return 'clamp(0.625rem, 2.25vw, 0.9rem)';
+        if (length <= 18) return 'clamp(0.5rem, 2.0vw, 0.8rem)';
+        return 'clamp(0.5rem, 1.75vw, 0.7rem)';
+    }
 </script>
 
 <div class="game-container">
@@ -256,6 +302,13 @@
             <div class="loading">Loading...</div>
         {:else}
             <p class="instructions">Create four groups of four!</p>
+
+            <!-- One Away Notification -->
+            {#if showOneAway}
+                <div class="one-away-notification">
+                    One away...
+                </div>
+            {/if}
 
             <!-- Game Grid - unified grid for solved categories and remaining tiles -->
             <div class="game-grid">
@@ -277,7 +330,7 @@
                         class:selected={selectedWords.includes(word)}
                         class:shaking={shakingWords.includes(word)}
                         class:celebrating={celebratingWords.includes(word)}
-                        style={celebratingWords.includes(word) && celebrationColor ? `background-color: ${celebrationColor.bg}; color: ${celebrationColor.text};` : ''}
+                        style="{celebratingWords.includes(word) && celebrationColor ? `background-color: ${celebrationColor.bg}; color: ${celebrationColor.text};` : ''} font-size: {getFontSize(word)};"
                         onclick={() => toggleWordSelection(word)}
                         disabled={gameWon || revealingCategories || celebratingWords.includes(word)}
                     >
@@ -401,7 +454,8 @@
     }
 
     .game-container {
-        min-height: 100vh;
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for mobile browsers */
         display: flex;
         flex-direction: column;
     }
@@ -430,6 +484,29 @@
         margin-bottom: 1.5rem;
     }
 
+    /* One Away Notification */
+    .one-away-notification {
+        position: fixed;
+        top: 5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #3a3a3c;
+        color: #ffffff;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        z-index: 100;
+        animation: fadeInOut 2s ease-in;
+    }
+
+    @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+        10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    }
+
     /* Unified Game Grid */
     .game-grid {
         width: 100%;
@@ -441,7 +518,8 @@
     /* Solved Category Row - spans all 4 columns */
     .solved-category {
         grid-column: 1 / -1;
-        aspect-ratio: 4.8 / 1;
+        /* Calculate aspect ratio: width spans 4 columns + 3 gaps, height equals 1 column width */
+        aspect-ratio: 4.01;
         padding: 0.5rem 1rem;
         border-radius: 8px;
         text-align: center;
@@ -479,7 +557,7 @@
         text-transform: uppercase;
         cursor: pointer;
         transition: background-color 0.15s, transform 0.15s;
-        padding: 0.5rem;
+        padding: 0.25rem;
         text-align: center;
         word-break: break-word;
     }
@@ -504,8 +582,7 @@
 
     /* Celebrating animation for correct guesses */
     .word-tile.celebrating {
-        transition: background-color 0.5s ease-out, color 0.5s ease-out, transform 0.3s ease-out;
-        transform: scale(1.05);
+        transition: background-color 0.5s ease-in, color 0.5s ease-in;
     }
 
     /* Shake animation for wrong guesses */
@@ -596,8 +673,9 @@
         bottom: 0;
         background-color: rgba(0, 0, 0, 0.7);
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
+        padding-top: 30vh;
         z-index: 200;
     }
 
@@ -607,6 +685,7 @@
         padding: 2rem;
         max-width: 400px;
         width: 90%;
+        margin: 1.5rem;
         text-align: center;
         border: 1px solid #3a3a3c;
     }
