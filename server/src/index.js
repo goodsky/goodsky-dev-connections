@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { loadGames, getGameById, getRandomGame, getGameIds, selectGameWords } = require('./categories');
+const reportRouter = require('./report');
 
 const PUBLIC_DIR = path.join(__dirname, '../public');
 const INDEX = path.join(PUBLIC_DIR, 'index.html');
@@ -9,6 +10,9 @@ const app = express();
 app.use(express.json());
 
 loadGames();
+
+// Mount the report router
+app.use('/api/report', reportRouter);
 
 // API endpoint to get a new game
 // Query params:

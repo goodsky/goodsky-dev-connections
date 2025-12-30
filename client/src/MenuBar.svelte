@@ -1,5 +1,5 @@
 <script>
-    let { kidMode = $bindable(false), onNewGame, onShareGame, onHowToPlay } = $props();
+    let { kidMode = $bindable(false), onNewGame, onShareGame, onHowToPlay, onReportIssue } = $props();
     
     let menuOpen = $state(false);
 
@@ -15,6 +15,11 @@
     function handleShareGame() {
         menuOpen = false;
         onShareGame?.();
+    }
+
+    function handleReportIssue() {
+        menuOpen = false;
+        onReportIssue?.();
     }
 
     function openHowToPlay() {
@@ -65,6 +70,9 @@
                     </button>
                     <button class="menu-item" onclick={handleShareGame}>
                         Share Game
+                    </button>
+                    <button class="menu-item" onclick={handleReportIssue}>
+                        Report Issue
                     </button>
                 </div>
             {/if}

@@ -141,3 +141,6 @@ vite.config.ts.timestamp-*
 # Client build output
 client/dist/
 server/public/
+
+# Server Storage
+server/storage/

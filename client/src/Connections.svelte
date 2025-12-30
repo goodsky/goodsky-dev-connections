@@ -2,6 +2,7 @@
     import { onMount } from 'svelte';
     import MenuBar from './MenuBar.svelte';
     import SplashScreen from './SplashScreen.svelte';
+    import ReportIssue from './ReportIssue.svelte';
 
     // Difficulty colors matching NYT (yellow, green, blue, purple)
     const DIFFICULTY_COLORS = [
@@ -38,6 +39,7 @@
     // Share modal
     let showShareModal = $state(false);
     let showHowToPlayModal = $state(false);
+    let showReportIssueModal = $state(false);
     let shareUrl = $state('');
     let copiedToClipboard = $state(false);
 
@@ -137,11 +139,10 @@
             // Cancel any currently speaking text
             window.speechSynthesis.cancel();
             
-            // Remove emojis from the spoken text since speech synthesis handles them inconsistently
-            // Emojis are in the Unicode range for supplementary characters
-            const textToSpeak = word.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+            // Keep only ASCII characters (removes emojis and other Unicode symbols)
+            const textToSpeak = word.replace(/[^\x20-\x7E]/g, '').trim();
             
-            // Only speak if there's text remaining after removing emojis
+            // Only speak if there's text remaining after filtering
             if (textToSpeak) {
                 const utterance = new SpeechSynthesisUtterance(textToSpeak);
                 utterance.rate = 0.75;  // Slightly slower for kids
@@ -172,6 +173,7 @@
 
         // Swap the solved category words into the front of the words array
         for (const categoryWordIndex of categoryWordIndices) {
+            if (categoryWordIndex < 4) continue; // Already in front
             const firstNonCategoryIndex = words.findIndex((w, index) => !categoryWordTexts.includes(w.text) && index < 4);
             const temp = words[firstNonCategoryIndex];
             words[firstNonCategoryIndex] = words[categoryWordIndex];
@@ -204,11 +206,6 @@
             celebrationColor = DIFFICULTY_COLORS[matchedCategory.difficulty];
             selectedWords = [];
 
-            // In kid mode, announce the category name
-            if (kidMode) {
-                speakWord(matchedCategory.name);
-            }
-
             // After color fade, add to solved and remove from grid
             setTimeout(() => {
                 // Clear celebrating state first
@@ -219,6 +216,11 @@
                 solvedCategories = [...solvedCategories, matchedCategory];
                 words = swapSolvedCategoryWords(matchedCategory);
 
+                // In kid mode, announce the category name
+                if (kidMode) {
+                    speakWord(matchedCategory.name);
+                }
+                
                 // Check for win with delay to let users admire the final board
                 if (solvedCategories.length === 4) {
                     setTimeout(() => {
@@ -324,6 +326,10 @@
         showHowToPlayModal = true;
     }
 
+    function handleReportIssue() {
+        showReportIssueModal = true;
+    }
+
     function copyShareUrl() {
         navigator.clipboard.writeText(shareUrl).then(() => {
             copiedToClipboard = true;
@@ -357,7 +363,12 @@
     // Calculate font size based on word length and container size
     function getFontSize(word) {
         const length = word.length;
+
+        // Check if word contains emojis (comprehensive Unicode ranges for emojis)
+        const hasEmoji = /[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FAFF}]/u.test(word);
+        
         // Use clamp() to scale with container while maintaining readable sizes
+        if (hasEmoji && length <= 4) return 'clamp(1.5rem, 4vw, 2.5rem)'; // Emoji-only words
         if (length <= 9) return 'clamp(0.75rem, 2.5vw, 1.0rem)';
         if (length <= 13) return 'clamp(0.625rem, 2.25vw, 0.9rem)';
         if (length <= 18) return 'clamp(0.5rem, 2.0vw, 0.8rem)';
@@ -375,6 +386,7 @@
         onNewGame={handleNewGame} 
         onShareGame={handleShareGame}
         onHowToPlay={handleHowToPlay}
+        onReportIssue={handleReportIssue}
     />
 
     <main class="game-content">
@@ -558,6 +570,15 @@
                 </div>
             </div>
         </div>
+    {/if}
+
+    <!-- Report Issue Modal -->
+    {#if showReportIssueModal}
+        <ReportIssue 
+            gameId={gameId}
+            words={[...solvedCategories.flatMap(cat => cat.words), ...words]}
+            onClose={() => showReportIssueModal = false}
+        />
     {/if}
 </div>
 
@@ -800,10 +821,10 @@
     .modal {
         background-color: #1a1a1b;
         border-radius: 12px;
-        padding: 2rem;
+        padding: 1rem;
         max-width: 400px;
         width: 90%;
-        margin: 1.5rem;
+        margin: 0.75rem;
         text-align: center;
         border: 1px solid #3a3a3c;
     }
@@ -822,6 +843,8 @@
         display: flex;
         gap: 0.75rem;
         justify-content: center;
+        flex-shrink: 0;
+        margin-top: 1rem;
     }
 
     .modal-btn {
@@ -887,10 +910,15 @@
     .how-to-play-modal {
         max-width: 500px;
         text-align: left;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
     .how-to-play-modal h2 {
         text-align: center;
+        flex-shrink: 0;
     }
 
     .how-to-play-modal h3 {
@@ -901,6 +929,9 @@
 
     .instructions-content {
         color: #e0e0e0;
+        overflow-y: auto;
+        flex: 1;
+        padding-right: 0.5rem;
     }
 
     .instructions-content p {
