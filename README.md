@@ -1,2 +1,2 @@
-# goodsky-dev-connections
-A version of the NYT Connections game that my toddler can play.
+# ⚠️⚠️⚠️ Deprecated ⚠️⚠️⚠️
+This repository has been migrated to https://github.com/goodsky/goodsky-dev-wordgames
